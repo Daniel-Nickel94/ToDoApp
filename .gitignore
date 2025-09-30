@@ -1,0 +1,19 @@
+# --- Gradle (Caches & Buildartefakte) ---
+.gradle/
+build/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+out/
+
+# --- Java generisch ---
+*.class
+*.log
+
+# --- Betriebssystem ---
+.DS_Store
+Thumbs.db
+
+# --- Gradle Wrapper (IM REPO BEHALTEN!) ---
+# (Kein ignore: gradle/ bleibt versioniert, inkl. gradle/wrapper/*.jar, *.properties)

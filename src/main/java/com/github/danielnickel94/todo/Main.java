@@ -15,6 +15,8 @@ public class Main {
             System.out.println("3) Löschen");
             System.out.println("4) Anzeigen");
             System.out.println("5) Als erledigt markieren");
+            System.out.println("6) Speichern");
+            System.out.println("7) Laden");
             System.out.println("0) Beenden");
             System.out.print("Auswahl: ");
 
@@ -55,6 +57,16 @@ public class Main {
                     System.out.print("ID als erledigt markieren: ");
                     int id = parseInt(sc.nextLine());
                     System.out.println(service.markDone(id) ? "Erledigt markiert." : "ID nicht gefunden.");
+                    break;
+                }
+                case "6": {
+                    service.save("todos.csv");
+                    System.out.println("Gespeichert in todos.csv");
+                    break;
+                }
+                case "7": {
+                    service.load("todos.csv");
+                    System.out.println("Todos aus todos.csv geladen.");
                     break;
                 }
                 case "0":

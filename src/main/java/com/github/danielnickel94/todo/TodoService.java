@@ -1,5 +1,10 @@
 package com.github.danielnickel94.todo;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,5 +45,41 @@ public class TodoService {
         for (Todo t : todos) if (t.getId() == id) return t;
         return null;
     }
+
+    public void save(String fileName) {
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+            for (Todo todo : todos) {
+                writer.write(todo.getId() + ";" + todo.isDone() + ";" + todo.getText());
+                writer.newLine();
+            }
+            System.out.println("Todos gespeichert in " + fileName);
+        } catch (IOException e) {
+            System.out.println("Fehler beim Speichern: " + e.getMessage());
+        }
+    }
+
+    public void load(String fileName) {
+        todos.clear();
+        nextId = 1;
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(fileName))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(";", 3);
+                if (parts.length == 3) {
+                    int id = Integer.parseInt(parts[0]);
+                    boolean done = Boolean.parseBoolean(parts[1]);
+                    String text = parts[2];
+                    todos.add(new Todo(id, text, done));
+                    if (id >= nextId) {
+                        nextId = id + 1;
+                    }
+                }
+            }
+            System.out.println("Todos geladen aus " + fileName);
+        } catch (IOException e) {
+            System.out.println("Fehler beim Laden: " + e.getMessage());
+        }
+    }
+
 }
 

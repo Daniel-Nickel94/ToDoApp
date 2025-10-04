@@ -13,7 +13,10 @@ public class TodoService {
     private int nextId = 1;
 
     public int add(String text) {
-        Todo t = new Todo(nextId++, text);
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException("Text darf nicht leer sein.");
+        }
+        Todo t = new Todo(nextId++, text.trim());
         todos.add(t);
         return t.getId();
     }
@@ -46,40 +49,45 @@ public class TodoService {
         return null;
     }
 
-    public void save(String fileName) {
+    public boolean save(String fileName) {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
             for (Todo todo : todos) {
                 writer.write(todo.getId() + ";" + todo.isDone() + ";" + todo.getText());
                 writer.newLine();
             }
-            System.out.println("Todos gespeichert in " + fileName);
+            return true;
         } catch (IOException e) {
             System.out.println("Fehler beim Speichern: " + e.getMessage());
+            return false;
         }
     }
 
-    public void load(String fileName) {
-        todos.clear();
-        nextId = 1;
+    public boolean load(String fileName) {
+        List<Todo> tmp = new ArrayList<>();
+        int tmpNextId = 1;
+
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(fileName))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 3);
-                if (parts.length == 3) {
-                    int id = Integer.parseInt(parts[0]);
-                    boolean done = Boolean.parseBoolean(parts[1]);
-                    String text = parts[2];
-                    todos.add(new Todo(id, text, done));
-                    if (id >= nextId) {
-                        nextId = id + 1;
-                    }
-                }
+                if (parts.length < 3) continue; // oder validieren/loggen
+                int id = Integer.parseInt(parts[0].trim());
+                boolean done = Boolean.parseBoolean(parts[1].trim());
+                String text = parts[2];
+                tmp.add(new Todo(id, text, done));
+                if (id >= tmpNextId) tmpNextId = id + 1;
             }
-            System.out.println("Todos geladen aus " + fileName);
-        } catch (IOException e) {
+            // Erfolgreich: jetzt erst übernehmen
+            todos.clear();
+            todos.addAll(tmp);
+            nextId = tmpNextId;
+            return true;
+        } catch (IOException | NumberFormatException e) {
             System.out.println("Fehler beim Laden: " + e.getMessage());
+            return false;
         }
     }
+
 
 }
 

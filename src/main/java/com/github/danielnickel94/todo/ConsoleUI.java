@@ -1,6 +1,5 @@
 package com.github.danielnickel94.todo;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -40,6 +39,10 @@ public class ConsoleUI {
         }
     }
 
+    private void autosave() {
+        service.save(DEFAULT_CSV);
+    }
+
     // Menüaktionen
 
     private void handleList() {
@@ -77,6 +80,7 @@ public class ConsoleUI {
         try {
             int id = service.add(text);
             System.out.println("Hinzugefügt mit ID " + id + ".");
+            autosave();
         } catch (IllegalArgumentException ex) {
             System.out.println(ex.getMessage());
         }
@@ -88,6 +92,7 @@ public class ConsoleUI {
         String neu = readNonEmptyLine(sc, "Neuer Text: ");
         boolean ok = service.updateText(id, neu);
         System.out.println(ok ? "Aktualisiert." : "ID nicht gefunden.");
+        if (ok) autosave();
     }
 
     private void handleRemove(Scanner sc) {
@@ -95,6 +100,7 @@ public class ConsoleUI {
         if (id == -1) return;
         boolean ok = service.remove(id);
         System.out.println(ok ? "Gelöscht." : "ID nicht gefunden.");
+        if (ok) autosave();
     }
 
     private void handleMarkDone(Scanner sc) {
@@ -102,6 +108,7 @@ public class ConsoleUI {
         if (id == -1) return;
         boolean ok = service.markDone(id);
         System.out.println(ok ? "Als erledigt markiert." : "ID nicht gefunden.");
+        if (ok) autosave();
     }
 
     private void handleSave(Scanner sc) {

@@ -43,13 +43,33 @@ public class ConsoleUI {
     // Menüaktionen
 
     private void handleList() {
-        List<Todo> todos = service.list();
-        if (todos.isEmpty()) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Anzeigen:");
+        System.out.println("1) Alle");
+        System.out.println("2) Nur offene");
+        System.out.println("3) Suchen (enthält...)");
+        System.out.println("4) Alphabetisch (A→Z)");
+        System.out.println("5) Alphabetisch (Z→A)");
+        int sub = readIntInRange(sc, "Auswahl: ", 1, 5);
+
+        List<Todo> toShow = switch (sub) {
+            case 1 -> service.list();
+            case 2 -> service.listOpen();
+            case 3 -> {
+                String q = readNonEmptyLine(sc, "Suchtext: ");
+                yield service.search(q);
+            }
+            case 4 -> service.sortByText(true);
+            case 5 -> service.sortByText(false);
+            default -> service.list();
+        };
+
+        if (toShow.isEmpty()) {
             System.out.println("keine Erledigungen vorhanden.");
             return;
         }
         System.out.println("Erledigungen:");
-        todos.forEach(t -> System.out.println(" - " + t));
+        toShow.forEach(t -> System.out.println(" - " + t));
     }
 
     private void handleAdd(Scanner sc) {

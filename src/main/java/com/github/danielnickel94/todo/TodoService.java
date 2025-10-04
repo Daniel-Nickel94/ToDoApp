@@ -44,6 +44,31 @@ public class TodoService {
         return List.copyOf(todos); // read-only copy
     }
 
+    public List<Todo> listOpen() {
+        return todos.stream()
+                .filter(t -> !t.isDone())
+                .map(t -> new Todo(t.getId(), t.getText(), t.isDone()))
+                .toList();
+    }
+
+    public List<Todo> search(String query) {
+        String q = query == null ? "" : query.trim().toLowerCase();
+        if (q.isEmpty()) return list(); // nichts zu filtern
+        return todos.stream()
+                .filter(t -> t.getText() != null && t.getText().toLowerCase().contains(q))
+                .map(t -> new Todo(t.getId(), t.getText(), t.isDone()))
+                .toList();
+    }
+
+    public List<Todo> sortByText(boolean asc) {
+        return todos.stream()
+                .sorted((a,b) -> asc
+                        ? a.getText().compareToIgnoreCase(b.getText())
+                        : b.getText().compareToIgnoreCase(a.getText()))
+                .map(t -> new Todo(t.getId(), t.getText(), t.isDone()))
+                .toList();
+    }
+
     private Todo find(int id) {
         for (Todo t : todos) if (t.getId() == id) return t;
         return null;

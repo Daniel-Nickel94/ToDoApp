@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,25 @@ import java.util.List;
 public class TodoService {
     private final List<Todo> todos = new ArrayList<>();
     private int nextId = 1;
+
+    private static final Path APP_DIR = Paths.get(
+            System.getenv("APPDATA") != null ? System.getenv("APPDATA") : System.getProperty("user.home"),
+            "ToDoApp"
+    );
+
+    private static Path inAppDir(String fileName) throws IOException {
+        Path p = Paths.get(fileName);
+        if (p.isAbsolute()) {
+            // Wenn absoluter Pfad übergeben wurde (z. B. aus @TempDir), genau dort speichern.
+            Path parent = p.getParent();
+            if (parent != null) Files.createDirectories(parent);
+            return p;
+        }
+        // Sonst im AppData-Ordner speichern
+        Files.createDirectories(APP_DIR);
+        return APP_DIR.resolve(fileName);
+    }
+
 
     public int add(String text) {
         if (text == null || text.trim().isEmpty()) {
@@ -75,11 +95,15 @@ public class TodoService {
     }
 
     public boolean save(String fileName) {
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
-            for (Todo todo : todos) {
-                writer.write(todo.getId() + ";" + todo.isDone() + ";" + todo.getText());
-                writer.newLine();
+        try {
+            Path target = inAppDir(fileName);  // <— NEU
+            try (BufferedWriter writer = Files.newBufferedWriter(target)) {
+                for (Todo todo : todos) {
+                    writer.write(todo.getId() + ";" + todo.isDone() + ";" + todo.getText());
+                    writer.newLine();
+                }
             }
+            System.out.println("Todos gespeichert unter: " + target.toAbsolutePath());
             return true;
         } catch (IOException e) {
             System.out.println("Fehler beim Speichern: " + e.getMessage());
@@ -91,21 +115,31 @@ public class TodoService {
         List<Todo> tmp = new ArrayList<>();
         int tmpNextId = 1;
 
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(fileName))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 3);
-                if (parts.length < 3) continue; // oder validieren/loggen
-                int id = Integer.parseInt(parts[0].trim());
-                boolean done = Boolean.parseBoolean(parts[1].trim());
-                String text = parts[2];
-                tmp.add(new Todo(id, text, done));
-                if (id >= tmpNextId) tmpNextId = id + 1;
+        try {
+            Path source = inAppDir(fileName);  // <— NEU
+            if (!Files.exists(source)) {
+                System.out.println("Datei nicht gefunden: " + source.toAbsolutePath());
+                return false;
+            }
+
+            try (BufferedReader reader = Files.newBufferedReader(source)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(";", 3);
+                    if (parts.length < 3) continue; // oder validieren/loggen
+                    int id = Integer.parseInt(parts[0].trim());
+                    boolean done = Boolean.parseBoolean(parts[1].trim());
+                    String text = parts[2];
+                    tmp.add(new Todo(id, text, done));
+                    if (id >= tmpNextId) tmpNextId = id + 1;
+                }
             }
             // Erfolgreich: jetzt erst übernehmen
             todos.clear();
             todos.addAll(tmp);
             nextId = tmpNextId;
+
+            System.out.println("Todos geladen von: " + source.toAbsolutePath());
             return true;
         } catch (IOException | NumberFormatException e) {
             System.out.println("Fehler beim Laden: " + e.getMessage());
